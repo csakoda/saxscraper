@@ -3,8 +3,12 @@ from dateutil.parser import parse
 from lxml import html
 import requests
 import argparse
-import logging as log
+import logging
 import sqlite3
+
+log = logging.getLogger(__name__)
+logging.getLogger("requests").setLevel(logging.WARNING) # disable noise
+
 conn = sqlite3.connect('scrape.db')
 db = conn.cursor()
 
@@ -23,7 +27,9 @@ phish_years = [ '1983', '1984', '1985', '1986', '1987', '1988', '1989', '1990', 
                 '2013', '2014' ]
 
 if args.debug:
-    log.basicConfig(level=log.DEBUG)
+    logging.basicConfig(level=logging.DEBUG)
+else:
+    logging.basicConfig(level=logging.INFO)
 
 db.execute('CREATE TABLE IF NOT EXISTS shows (id numeric, date numeric, rating real, votes integer)')
 conn.commit()
@@ -68,7 +74,10 @@ def scrape_rating(date, tree, id=None):
             conn.commit()
             log.info('Scraped {0} ({1})'.format(date, rating))
     else:
-        log.info('Already scraped {0} ({1})'.format(result[0], result[1]))
+        if result[0] != result[1]:
+            log.info('Already scraped {0} [{1}] ({2})'.format(result[1], result[0], result[2]))
+        else:
+            log.info('Already scraped {0} ({1})'.format(result[1], result[2]))
 
 if args.all_years:
     for year in phish_years:
