@@ -14,9 +14,9 @@ db = conn.cursor()
 
 parser = argparse.ArgumentParser(description='Scrape data from phish.net')
 parser.add_argument('--all-years', action='store_true',
-                    help='Show rating of a show')
+                    help='Scrape all years')
 parser.add_argument('--year', action='store',
-                    help='Show rating of a show')
+                    help='Scrape individual year')
 parser.add_argument('--debug', action='store_true',
                     help='Enable debug output')
 
