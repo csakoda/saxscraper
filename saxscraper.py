@@ -15,6 +15,8 @@ db = conn.cursor()
 parser = argparse.ArgumentParser(description='Scrape data from phish.net')
 parser.add_argument('--all-years', action='store_true',
                     help='Show rating of a show')
+parser.add_argument('--year', action='store',
+                    help='Show rating of a show')
 parser.add_argument('--debug', action='store_true',
                     help='Enable debug output')
 
@@ -35,6 +37,7 @@ db.execute('CREATE TABLE IF NOT EXISTS shows (id numeric, date numeric, rating r
 conn.commit()
 
 def scrape_date(date):
+    log.debug('Scraping date {0}'.format(date))
     if parse(date) > datetime.now():
         log.debug('Skipping future show {0}'.format(date))
         return
@@ -79,13 +82,20 @@ def scrape_rating(date, tree, id=None):
         else:
             log.info('Already scraped {0} ({1})'.format(result[1], result[2]))
 
+def scrape_year(year):
+    log.debug('Scraping year {0}'.format(year))
+    page = requests.get('http://phish.net/setlists/{0}.html'.format(year))
+    tree = html.fromstring(page.text)
+    dates = tree.xpath('//div[@class="setlist"]/h2/a[contains(@href,"http://phish.net/setlists/?d=")]/@href')
+    for url in (set(dates)):
+        date = url[29:]
+        scrape_date(date)
+
 if args.all_years:
     for year in phish_years:
-        page = requests.get('http://phish.net/setlists/{0}.html'.format(year))
-        tree = html.fromstring(page.text)
-        dates = tree.xpath('//a[contains(@href,"http://phish.net/setlists/?d=")]/@href')
-        for url in (set(dates)):
-            date = url[29:]
-            scrape_date(date)
+        scrape_year(year)
 
+    
+if args.year:
+    scrape_year(args.year)
     
