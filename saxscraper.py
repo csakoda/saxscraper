@@ -41,12 +41,7 @@ def scrape_date(date):
     if parse(date) > datetime.now():
         log.debug('Skipping future show {0}'.format(date))
         return
-
-    url = 'http://phish.net/setlists/?d={0}'.format(date)
-    page = requests.get(url)
-    log.debug('Scraped {0}'.format(url))
-    tree = html.fromstring(page.text)
-    scrape_rating(date, tree)
+    scrape_rating(date)
     
 # Input: [ ' 3.261' ]
 # Output: 3.261
@@ -58,19 +53,24 @@ def parse_rating(rating):
 def parse_votes(votes):
     return votes[1].split(' ')[1][1:]    
     
-def scrape_rating(date, tree, id=None):
+def scrape_rating(date, id=None):
     if not id:
         id = date
+        url = 'http://phish.net/setlists/?d={0}'.format(date)
+    else:
+        url = 'http://phish.net/setlists/?showid={0}'.format(id)
     db.execute('select * from shows where id=?', (id,))
     result = db.fetchone()
     if not result:
+        page = requests.get(url)
+        log.debug('Scraped {0}'.format(url))
+        tree = html.fromstring(page.text)
         rating = tree.xpath('//span[@id="ratingsection"]/span[@style="margin-left:20px;"]/strong/text()')
         if len(rating) == 0:
             # there must have been multiple shows on this day
             shows = tree.xpath('//a[contains(@href, "/setlists/?showid=")]/@href')
             for show in shows:
-                page = requests.get('http://phish.net{0}'.format(show))
-                scrape_rating(date, html.fromstring(page.text), id=show[18:])
+                scrape_rating(date, id=show[18:])
         else:
             log.debug('Date: {0}'.format(date))
             rating = parse_rating(rating)
