@@ -12,3 +12,4 @@ python saxscraper.py --all-years
 
 ## TODO
 * Some modes for analyzing the data
+* Export to CSV / google doc
