@@ -8,4 +8,7 @@ Scrapes all the phish.net show ratings into a sqlite database.
 python saxscraper.py --all-years
 ```
 
-**warning** this takes a while
+**WARNING** This takes a while
+
+## TODO
+* Some modes for analyzing the data
