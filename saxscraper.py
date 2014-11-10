@@ -48,15 +48,19 @@ def scrape_date(date):
     tree = html.fromstring(page.text)
     scrape_rating(date, tree)
     
-
-# like 'Currently 3.26/5'
+# Input: [ ' 3.261' ]
+# Output: 3.261
 def parse_rating(rating):
-    return rating[0].split(' ')[1].split('/')[0]
+    return rating[0].strip()
+
+# Input: ['Rating: ', '/5 (159 votes cast)']
+# Output: 159
+def parse_votes(votes):
+    return votes[1].split(' ')[1][1:]    
     
 def scrape_rating(date, tree, id=None):
     if not id:
         id = date
-
     db.execute('select * from shows where id=?', (id,))
     result = db.fetchone()
     if not result:
@@ -68,11 +72,11 @@ def scrape_rating(date, tree, id=None):
                 page = requests.get('http://phish.net{0}'.format(show))
                 scrape_rating(date, html.fromstring(page.text), id=show[18:])
         else:
+            log.debug('Date: {0}'.format(date))
             rating = parse_rating(rating)
             log.debug('Rating: {0}'.format(rating))
-            votes = tree.xpath('//span[@id="ratingsection"]/span[@style="margin-left:20px;"]/text()')[1].split(' ')[1][1:]
+            votes = parse_votes(tree.xpath('//span[@id="ratingsection"]/span[@style="margin-left:20px;"]/text()'))
             log.debug('Votes: {0}'.format(votes))
-            log.debug('Date: {0}'.format(date))
             db.execute('insert into shows values (?, ?, ?, ?)', (id, date, rating, votes))
             conn.commit()
             log.info('Scraped {0} ({1})'.format(date, rating))
@@ -94,7 +98,6 @@ def scrape_year(year):
 if args.all_years:
     for year in phish_years:
         scrape_year(year)
-
     
 if args.year:
     scrape_year(args.year)
